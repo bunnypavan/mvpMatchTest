@@ -15,6 +15,7 @@ import {
 import SearchBar from 'react-native-dynamic-search-bar';
 import {AlbumCard} from './AlbumCard';
 import NetInfo from '@react-native-community/netinfo';
+import {Spinner} from './Spinner';
 
 const styles = StyleSheet.create({
   genreNameText: {
@@ -61,8 +62,13 @@ const styles = StyleSheet.create({
     height: Dimensions.get('window').height / 2,
   },
   selectedImg: {
-    top: -10,
-    zIndex: 1,
+    // top: -10,
+    position: 'absolute',
+    top: 15,
+    right: -13,
+    width: 15,
+    height: 15,
+    // zIndex: 1,
   },
 });
 
@@ -73,6 +79,8 @@ const MovieList: React.FC = props => {
   const [loadData, setLoadData] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [localData, setLocalData] = useState<any>([]);
+  const [showSpinner, setShowSpinner] = useState<boolean>(false);
+  // const [noDataFound, setNoDataFound] = useState<boolean>(true);
   var filteredArray: any[] = [];
   const ITEM_WIDTH = 90;
   const ITEM_MARGIN_RIGHT = 10;
@@ -104,26 +112,32 @@ const MovieList: React.FC = props => {
   };
 
   const renderNoInternet = () => {
-    return !loading ? (
+    return (
       <View style={{marginTop: 30, left: 20}}>
-        <Text>{`Please check your internet connection and try again`}</Text>
+        <View>
+          <Image
+            style={styles.noDataFound}
+            source={require('./Icons/no-search-found.webp')}
+          />
+        </View>
+        <Text>{`Please check your internet connection/Search Content and try again`}</Text>
         <Button
           title="Try Again"
           onPress={() => {
-            setLoading(true);
             unsubscribe();
+            triggerMovieApi();
           }}
           loading={loading}
         />
       </View>
-    ) : null;
+    );
   };
 
   // Loading mapped data by setting a state
   useLayoutEffect(() => {
-    if (localData?.length === 0) {
-      mapVideos();
-      setLoadData(localData);
+    if (loadData?.length === 0) {
+      triggerMovieApi();
+      // setLoadData(loadData);
     }
   }, []);
 
@@ -144,18 +158,20 @@ const MovieList: React.FC = props => {
   // When user tries to search for movies list,
   // then we load the data as per its substring and pass it to its state
   useLayoutEffect(() => {
-    if (searchText?.length > 1) {
-      const result = loadData.filter((item: any) => {
+    setShowSpinner(true);
+    if (searchText?.length > 3) {
+      const filteredArray = loadData.filter((item: any) => {
         const checkSubString = item?.title?.slice(0, searchText?.length);
         if (searchText === checkSubString) {
           moveToTop();
           return item;
         }
       });
-      console.log(result, 'PRINT ALL');
-      setLoadData(result);
+      setShowSpinner(false);
+      setLoadData(filteredArray);
     } else {
       setLoadData(localData);
+      setShowSpinner(false);
     }
   }, [searchText]);
 
@@ -169,12 +185,19 @@ const MovieList: React.FC = props => {
   };
 
   // Data is loaded using state
-  const mapVideos = () => {
-    if (localData?.length === 0) {
-      api().then(res => {
+  const triggerMovieApi = () => {
+    setShowSpinner(true);
+    api()
+      .then(res => {
+        setLoadData(res?.items);
         setLocalData(res?.items);
+        setShowSpinner(false);
+      })
+      .catch(err => {
+        setShowSpinner(false);
+        setLoading(false);
+        console.error(err);
       });
-    }
   };
 
   // Favorite image on Go to Favorite button
@@ -191,6 +214,7 @@ const MovieList: React.FC = props => {
   const onClearSearchBar = () => {
     setSearchText('');
     Keyboard.dismiss();
+    setLoadData(loadData);
   };
 
   // Navigating on click of specific screen with details
@@ -207,38 +231,47 @@ const MovieList: React.FC = props => {
         return item?.title !== selectedMovie?.title;
       });
     }
-    console.log(filteredArray, 'Selected');
   };
+
+  // const noDataAvailable = () => {
+  //   return (
+  //     <View style={{left: 20}}>
+  //       <Image
+  //         style={styles.noDataFound}
+  //         source={require('./Icons/no-search-found.webp')}
+  //       />
+  //     </View>
+  //   );
+  // };
 
   // render Search bar
   const renderSearchBar = () => {
-    return (
+    return loadData?.length >= 1 ? (
       <View style={styles.searchRender}>
         <View style={{flexDirection: 'row', padding: 5}}>
           <Text
             style={[
               styles.genreNameText,
-              {color: loadData?.length > 1 ? 'white' : '#F5F5F5'},
+              {color: loadData?.length >= 1 ? 'white' : '#F5F5F5'},
             ]}>
             {'TOP 250 Movies'}
           </Text>
-          {loadData?.length > 1 ? (
-            <TouchableOpacity
-              onPress={() => {
-                props?.navigation?.navigate('GoToFavourites', {
-                  items: filteredArray,
-                });
-              }}>
-              <Text
-                style={[
-                  styles.favoriteText,
-                  {color: loadData?.length > 1 ? 'white' : '#F5F5F5'},
-                ]}>
-                {'Go To Favorites'}
-                {favouriteSelection()}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
+
+          <TouchableOpacity
+            onPress={() => {
+              props?.navigation?.navigate('GoToFavourites', {
+                items: filteredArray,
+              });
+            }}>
+            {favouriteSelection()}
+            <Text
+              style={[
+                styles.favoriteText,
+                {color: loadData?.length > 1 ? 'white' : '#F5F5F5'},
+              ]}>
+              {'Go To Favorites'}
+            </Text>
+          </TouchableOpacity>
         </View>
         <SearchBar
           placeholder="Search For Your Favorite Movie"
@@ -247,18 +280,19 @@ const MovieList: React.FC = props => {
           spinnerVisibility={false}
         />
       </View>
-    );
+    ) : null;
   };
-
+  console.log(loading, 'Load');
   return (
     <SafeAreaView
       style={{
         backgroundColor: loadData?.length >= 1 ? '#398582' : '#F5F5F5',
         flex: 1,
       }}>
-      {loading && renderSearchBar()}
-      {renderNoInternet()}
-      {loading && loadData?.length >= 1 ? (
+      {loadData?.length >= 1 ? renderSearchBar() : null}
+      {loadData?.length >= 1 ? null : renderNoInternet()}
+      {showSpinner && <Spinner />}
+      {loadData?.length >= 1 && (
         <FlatList
           ref={flatListRef}
           data={loadData}
@@ -286,13 +320,6 @@ const MovieList: React.FC = props => {
             );
           }}
         />
-      ) : (
-        <View style={{left: 20}}>
-          <Image
-            style={styles.noDataFound}
-            source={require('./Icons/no-search-found.webp')}
-          />
-        </View>
       )}
     </SafeAreaView>
   );
