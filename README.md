@@ -1,3 +1,8 @@
+#How to run the app
+
+**Do npm install and after that cd ios && pod install && cd .. **
+It is well tested in iOS, **Please run this app from Xcode** only as I had faced some metro bundler issues on VsCode for npx react-native run-ios command.
+
 # MVP Home Assignment to show movie list
 
 The features that I implemented by fetching all top 250 movies list from IMDB API
@@ -11,4 +16,3 @@ The features that I implemented by fetching all top 250 movies list from IMDB AP
 
 7. Due to my less bandwidth I have Decided to go with all the above mentioned implementations and if anything is missing then we can freely discuss on that.
 
-This is for Test Assessment
