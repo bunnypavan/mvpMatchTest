@@ -14,6 +14,5 @@ The features that I implemented by fetching all top 250 movies list from IMDB AP
 5. After selecting as per the Favorite list, The same will be available in the Favorite Screen
 6. There is a search option where the user can search for his/her optioned movie, that will be filtered and seen it on the screen.
 7. If internet is lost or the searched movie is not available in the top 250 movies list, then I am providing 'No data Available Image' and 'Please Try again button to hit the api once again to see the listed items'.
-
 7. Due to my less bandwidth I have Decided to go with all the above mentioned implementations and if anything is missing then we can freely discuss on that.
 
