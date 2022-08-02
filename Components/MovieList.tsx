@@ -63,13 +63,11 @@ const styles = StyleSheet.create({
     height: Dimensions.get('window').height / 2,
   },
   selectedImg: {
-    // top: -10,
     position: 'absolute',
     top: 15,
     right: -13,
     width: 15,
     height: 15,
-    // zIndex: 1,
   },
 });
 
@@ -77,12 +75,10 @@ const MovieList: React.FC = props => {
   const fetchUrl = 'https://imdb-api.com/en/API/Top250TVs/k_9to3u4hy';
   LogBox.ignoreAllLogs(true);
   const flatListRef = useRef();
-  const [searchText, setSearchText] = useState<string>('');
   const [loadData, setLoadData] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [localData, setLocalData] = useState<any>([]);
   const [showSpinner, setShowSpinner] = useState<boolean>(false);
-  const [hideData, setHideData] = useState<any>([]);
   var filteredArray: any[] = [];
   var hiddenData: any[] = [];
   const ITEM_WIDTH = 90;
@@ -178,30 +174,6 @@ const MovieList: React.FC = props => {
       });
   };
 
-  // When user tries to search for movies list,
-  // then we load the data as per its substring and pass it to its state
-  useLayoutEffect(() => {
-    setShowSpinner(true);
-    if (searchText?.length > 3) {
-      console.log(loadData?.length, 'LENGTH');
-      filteredArray = loadData?.filter((item: any) => {
-        const checkSubString = item?.title?.slice(0, searchText?.length);
-        if (
-          searchText.toLowerCase() === checkSubString.toLowerCase() ||
-          searchText.toUpperCase() === checkSubString.toUpperCase()
-        ) {
-          moveToTop();
-          return item;
-        }
-      });
-      setShowSpinner(false);
-      setLoadData(filteredArray);
-    } else {
-      setLoadData(localData);
-      setShowSpinner(false);
-    }
-  }, [searchText]);
-
   // tried to minimise images load on the screen
   const getItemLayout = (_, index) => {
     return {
@@ -239,9 +211,42 @@ const MovieList: React.FC = props => {
 
   //Clearing search text
   const onClearSearchBar = () => {
-    setSearchText('');
     Keyboard.dismiss();
-    setLoadData(loadData);
+    setLoadData(localData);
+  };
+
+  // When user tries to search for movies list,
+  // then we load the data as per its substring and pass it to its state
+  const keepSearchingText = (searchText: string) => {
+    //
+    const hideRecords = loadData?.map(function (x) {
+      var result = hiddenData?.filter(a1 => a1.id == x.id);
+      if (result?.length > 0) {
+        x.isHidden = true;
+      } else {
+        x.isHidden = false;
+      }
+      return x;
+    });
+    if (searchText?.length > 3) {
+      filteredArray = hideRecords?.filter((item: any) => {
+        const checkSubString = item?.title?.slice(0, searchText?.length);
+        if (
+          searchText.toLowerCase() === checkSubString.toLowerCase() ||
+          searchText.toUpperCase() === checkSubString.toUpperCase()
+        ) {
+          if (item?.isHidden === false) {
+            moveToTop();
+            return item;
+          }
+        }
+      });
+      setShowSpinner(false);
+      setLoadData(filteredArray);
+    } else {
+      setLoadData(localData);
+      setShowSpinner(false);
+    }
   };
 
   // Navigating on click of specific screen with details
@@ -251,7 +256,6 @@ const MovieList: React.FC = props => {
 
   // Pushing as per the user Selection and removing the unselected item from the list
   const onFavSelection = (isSelected: boolean, selectedMovie: any) => {
-    console.log('onFavSelection', selectedMovie);
     if (isSelected === true) {
       filteredArray.push(selectedMovie);
     } else {
@@ -263,10 +267,12 @@ const MovieList: React.FC = props => {
 
   const onHide = (isHidden: boolean, selectedMovie: any) => {
     if (isHidden === true) {
-      const arr = loadData?.filter(function (item) {
-        return item?.title !== selectedMovie?.title;
-      });
-      setLoadData(arr);
+      hiddenData.push(selectedMovie);
+    } else {
+      let indexOff = hiddenData.indexOf(selectedMovie);
+      if (indexOff > -1) {
+        hiddenData.splice(indexOff, 1);
+      }
     }
   };
 
@@ -301,14 +307,13 @@ const MovieList: React.FC = props => {
         </View>
         <SearchBar
           placeholder="Search For Your Favorite Movie"
-          onChangeText={text => setSearchText(text)}
+          onChangeText={text => keepSearchingText(text)}
           onClearPress={() => onClearSearchBar()}
           spinnerVisibility={false}
         />
       </View>
     ) : null;
   };
-  console.log(loading, 'Load');
   return (
     <SafeAreaView
       style={{

@@ -91,7 +91,8 @@ const GoToFavourites: React.FC = ({route}) => {
                   image_url={item?.image}
                   artistName={item?.fullTitle}
                   title={item?.imDbRating}
-                  hideFavorite={true}
+                  selectedFavoriteMovie={true}
+                  hideMovie={true}
                 />
               </View>
             );

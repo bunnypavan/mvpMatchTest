@@ -83,6 +83,7 @@ export interface AlbumCardProps {
   onPressHide?: (isHidden: boolean) => void;
   selectedFavoriteMovie?: boolean;
   hideMovie?: boolean;
+  searchHide?: boolean;
 }
 
 export const AlbumCard: React.FC<AlbumCardProps> = props => {
@@ -115,7 +116,7 @@ export const AlbumCard: React.FC<AlbumCardProps> = props => {
       />
     );
   };
-
+  console.log(props?.searchHide, 'SEARCH HIDE');
   return (
     <TouchableOpacity style={styles.mainContainer} onPress={props.onPress}>
       <FastImage
@@ -132,7 +133,7 @@ export const AlbumCard: React.FC<AlbumCardProps> = props => {
       {!props.hideMovie ? (
         <TouchableOpacity onPress={() => hideMovieFromList()}>
           <Text style={hide ? styles.hideMovie : styles.unhideMovie}>
-            {'Remove From Search'}
+            {'Hide'}
           </Text>
         </TouchableOpacity>
       ) : null}
