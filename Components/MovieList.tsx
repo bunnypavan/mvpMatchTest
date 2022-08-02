@@ -11,6 +11,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  LogBox,
 } from 'react-native';
 import SearchBar from 'react-native-dynamic-search-bar';
 import {AlbumCard} from './AlbumCard';
@@ -74,14 +75,16 @@ const styles = StyleSheet.create({
 
 const MovieList: React.FC = props => {
   const fetchUrl = 'https://imdb-api.com/en/API/Top250TVs/k_9to3u4hy';
+  LogBox.ignoreAllLogs(true);
   const flatListRef = useRef();
   const [searchText, setSearchText] = useState<string>('');
   const [loadData, setLoadData] = useState<any>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [localData, setLocalData] = useState<any>([]);
   const [showSpinner, setShowSpinner] = useState<boolean>(false);
-  // const [noDataFound, setNoDataFound] = useState<boolean>(true);
+  const [hideData, setHideData] = useState<any>([]);
   var filteredArray: any[] = [];
+  var hiddenData: any[] = [];
   const ITEM_WIDTH = 90;
   const ITEM_MARGIN_RIGHT = 10;
 
@@ -95,7 +98,7 @@ const MovieList: React.FC = props => {
   };
 
   // check internet Connectivity
-  useEffect(() => {
+  useLayoutEffect(() => {
     unsubscribe();
   }, []);
 
@@ -120,15 +123,36 @@ const MovieList: React.FC = props => {
             source={require('./Icons/no-search-found.webp')}
           />
         </View>
-        <Text>{`Please check your internet connection/Search Content and try again`}</Text>
-        <Button
-          title="Try Again"
-          onPress={() => {
-            unsubscribe();
-            triggerMovieApi();
-          }}
-          loading={loading}
-        />
+        <Text
+          style={{
+            padding: 10,
+            marginRight: 10,
+            fontSize: 14,
+            fontWeight: '100',
+          }}>{`Please check your internet connection/Search Content and try again`}</Text>
+        <View style={{marginRight: 10}}>
+          <TouchableOpacity
+            style={{alignSelf: 'center'}}
+            onPress={() => {
+              setShowSpinner(true);
+              unsubscribe();
+              triggerMovieApi();
+            }}>
+            <Text
+              style={{
+                textAlign: 'center',
+                borderRadius: 10,
+                borderColor: '#FC9916',
+                fontWeight: 'bold',
+                borderWidth: 1,
+                width: '30%',
+                padding: 7,
+                color: '#FC9916',
+              }}>
+              {'Try Again'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -137,7 +161,6 @@ const MovieList: React.FC = props => {
   useLayoutEffect(() => {
     if (loadData?.length === 0) {
       triggerMovieApi();
-      // setLoadData(loadData);
     }
   }, []);
 
@@ -160,9 +183,13 @@ const MovieList: React.FC = props => {
   useLayoutEffect(() => {
     setShowSpinner(true);
     if (searchText?.length > 3) {
-      const filteredArray = loadData.filter((item: any) => {
+      console.log(loadData?.length, 'LENGTH');
+      filteredArray = loadData?.filter((item: any) => {
         const checkSubString = item?.title?.slice(0, searchText?.length);
-        if (searchText === checkSubString) {
+        if (
+          searchText.toLowerCase() === checkSubString.toLowerCase() ||
+          searchText.toUpperCase() === checkSubString.toUpperCase()
+        ) {
           moveToTop();
           return item;
         }
@@ -224,25 +251,24 @@ const MovieList: React.FC = props => {
 
   // Pushing as per the user Selection and removing the unselected item from the list
   const onFavSelection = (isSelected: boolean, selectedMovie: any) => {
+    console.log('onFavSelection', selectedMovie);
     if (isSelected === true) {
       filteredArray.push(selectedMovie);
     } else {
-      filteredArray = filteredArray.filter(function (item) {
+      filteredArray = filteredArray?.filter(function (item) {
         return item?.title !== selectedMovie?.title;
       });
     }
   };
 
-  // const noDataAvailable = () => {
-  //   return (
-  //     <View style={{left: 20}}>
-  //       <Image
-  //         style={styles.noDataFound}
-  //         source={require('./Icons/no-search-found.webp')}
-  //       />
-  //     </View>
-  //   );
-  // };
+  const onHide = (isHidden: boolean, selectedMovie: any) => {
+    if (isHidden === true) {
+      const arr = loadData?.filter(function (item) {
+        return item?.title !== selectedMovie?.title;
+      });
+      setLoadData(arr);
+    }
+  };
 
   // render Search bar
   const renderSearchBar = () => {
@@ -290,7 +316,7 @@ const MovieList: React.FC = props => {
         flex: 1,
       }}>
       {loadData?.length >= 1 ? renderSearchBar() : null}
-      {loadData?.length >= 1 ? null : renderNoInternet()}
+      {!showSpinner && loadData?.length >= 1 ? null : renderNoInternet()}
       {showSpinner && <Spinner />}
       {loadData?.length >= 1 && (
         <FlatList
@@ -313,8 +339,10 @@ const MovieList: React.FC = props => {
                   onPressFavorite={isSelected =>
                     onFavSelection(isSelected, item)
                   }
+                  onPressHide={isHideen => onHide(isHideen, item)}
                   onPress={() => onPress(item)}
-                  hideFavorite={false}
+                  selectedFavoriteMovie={false}
+                  hideMovie={false}
                 />
               </View>
             );

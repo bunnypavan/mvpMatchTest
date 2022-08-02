@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   TouchableOpacityProps,
+  View,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 const screenWidth = Dimensions.get('window').width;
@@ -51,6 +52,26 @@ const styles = StyleSheet.create({
     top: -15,
     right: 2,
   },
+  hideMovie: {
+    borderRadius: 10,
+    borderColor: 'red',
+    fontWeight: '400',
+    fontSize: 10,
+    borderWidth: 1,
+    top: 10,
+    padding: 4,
+    color: 'red',
+  },
+  unhideMovie: {
+    borderRadius: 10,
+    borderColor: 'green',
+    fontWeight: '400',
+    fontSize: 10,
+    borderWidth: 1,
+    top: 10,
+    padding: 4,
+    color: 'green',
+  },
 });
 
 export interface AlbumCardProps {
@@ -59,15 +80,22 @@ export interface AlbumCardProps {
   artistName: string;
   onPress?: TouchableOpacityProps['onPress'];
   onPressFavorite?: (isFavoriteSelected: boolean) => void;
-  hideFavorite?: boolean;
+  onPressHide?: (isHidden: boolean) => void;
+  selectedFavoriteMovie?: boolean;
+  hideMovie?: boolean;
 }
 
 export const AlbumCard: React.FC<AlbumCardProps> = props => {
   const [selected, setSelected] = useState<boolean>(false);
+  const [hide, setHide] = useState<boolean>(false);
 
   const selecteYourFavoriteMovie = () => {
     setSelected(!selected);
-    props?.onPressFavorite && props?.onPressFavorite(!selected);
+    props?.onPressFavorite && props?.onPressFavorite(!hide);
+  };
+  const hideMovieFromList = () => {
+    setHide(!hide);
+    props?.onPressHide && props?.onPressHide(!hide);
   };
 
   const noFavoriteSelection = () => {
@@ -100,7 +128,15 @@ export const AlbumCard: React.FC<AlbumCardProps> = props => {
       <Text style={styles.titleStyling} numberOfLines={1}>
         {`IMDB Ranking: ${props?.title}`}
       </Text>
-      {!props.hideFavorite ? (
+
+      {!props.hideMovie ? (
+        <TouchableOpacity onPress={() => hideMovieFromList()}>
+          <Text style={hide ? styles.hideMovie : styles.unhideMovie}>
+            {'Remove From Search'}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+      {!props.selectedFavoriteMovie ? (
         <TouchableOpacity
           onPress={() => selecteYourFavoriteMovie()}
           style={styles.hideFavorite}>
